@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import EditableTitle from "./EditableTitle";
-import TypeArea from "./TypeArea";
+import EditableTitle from "../tokens/EditableTitle";
+import TypeArea from "@/components/notes/TypeArea";
 
 interface NoteContent {
   id: string;
@@ -13,8 +13,8 @@ interface NoteContent {
 }
 
 interface NotesContentProps {
-  selectedNote: NoteContent | null; // the note that is currently selected
-  onContentChange: (content: string) => void; // callback when user changes content
+  selectedNote: NoteContent | null;
+  onContentChange: (content: string) => void;
   onTitleChange: (newTitle: string) => void;
   soundEnabled: boolean;
 }
@@ -27,7 +27,6 @@ export default function NotesContent({
 }: NotesContentProps) {
   const [content, setContent] = useState(selectedNote?.content || "");
 
-  // function to set the content of the note
   useEffect(() => {
     if (selectedNote) {
       setContent(selectedNote.content);
@@ -41,8 +40,8 @@ export default function NotesContent({
 
   if (!selectedNote) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white">
-        <div className="text-center text-gray-800">
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center text-gray-500">
           <h2 className="text-xl font-medium mb-2">No note selected</h2>
           <p>Select a note from the left sidebar to start writing</p>
         </div>
@@ -51,35 +50,33 @@ export default function NotesContent({
   }
 
   return (
-    <div className="flex-1 bg-white flex flex-col">
-      {/* Header with Editable Title */}
-      <div className="p-6 border-b border-gray-200">
+    <div className="flex flex-col w-full">
+      <div className="p-6">
         <EditableTitle
           title={selectedNote.title}
           onTitleChange={onTitleChange}
-          className="text-2xl font-bold text-gray-900 mb-2 transition-colors cursor-pointer"
+          className="text-2xl font-bold text-gray-900 mb-2 cursor-pointer"
         />
       </div>
 
-      {/* Content Area */}
-      <div className="flex-1 p-6">
+      <div className="flex-1">
         <div className="max-w-4xl">
-          {/* Date Range */}
+          {/* Date Range Tag */}
           {selectedNote.dateRange && (
             <div className="mb-4">
-              <span className="bg-gray-100 text-gray-600 px-3 py-1 text-sm">
-                {selectedNote.dateRange}
-              </span>
+              <span className="tag">{selectedNote.dateRange}</span>
             </div>
           )}
 
           {/* Typewriter Textarea */}
-          <TypeArea
-            value={content}
-            onChange={handleContentChange}
-            placeholder="Start writing your notes here..."
-            soundEnabled={soundEnabled}
-          />
+          <div className="mt-6">
+            <TypeArea
+              value={content}
+              onChange={handleContentChange}
+              placeholder="Start writing your notes here..."
+              soundEnabled={soundEnabled}
+            />
+          </div>
         </div>
       </div>
     </div>

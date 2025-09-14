@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import NotesList from "@/components/NotesList";
-import NotesContent from "./NotesContent";
+import NotesList from "@/components/notes/NotesList";
+import NotesContent from "./notes/NotesContent";
 import SoundToggle from "./tokens/SoundToggle";
 
 interface Note {
@@ -17,7 +17,7 @@ interface Note {
 export default function MainLayout() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState(true); // Default to ON
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const handleNoteSelect = (noteId: string) => {
     setNotes(
@@ -75,22 +75,26 @@ export default function MainLayout() {
     : null;
 
   return (
-    <div className="flex h-screen bg-gray-50 relative">
-      {/* Sound Toggle Component */}
-      <SoundToggle soundEnabled={soundEnabled} onToggle={toggleSound} />
+    <div className="min-h-screen flex items-center justify-center p-8">
+      <div className="w-3/4 max-w-4xl">
+        <div className="flex h-[calc(100vh-4rem)]  overflow-hidden">
+          {/* Sound Toggle - Top Right */}
+          <SoundToggle soundEnabled={soundEnabled} onToggle={toggleSound} />
 
-      <NotesList
-        notes={notes}
-        onNoteSelect={handleNoteSelect}
-        onNewNote={handleNewNote}
-        onTitleChange={handleTitleChange}
-      />
-      <NotesContent
-        selectedNote={selectedNote}
-        onContentChange={handleContentChange}
-        onTitleChange={handleSelectedNoteTitleChange}
-        soundEnabled={soundEnabled}
-      />
+          <NotesList
+            notes={notes}
+            onNoteSelect={handleNoteSelect}
+            onNewNote={handleNewNote}
+            onTitleChange={handleTitleChange}
+          />
+          <NotesContent
+            selectedNote={selectedNote}
+            onContentChange={handleContentChange}
+            onTitleChange={handleSelectedNoteTitleChange}
+            soundEnabled={soundEnabled}
+          />
+        </div>
+      </div>
     </div>
   );
 }

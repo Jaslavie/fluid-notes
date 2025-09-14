@@ -1,7 +1,7 @@
 "use client";
 
 import NoteItem from "./NoteItem";
-import Button from "./Button";
+import Button from "../tokens/Button";
 
 interface Note {
   id: string;
@@ -23,8 +23,8 @@ export default function NotesList({
   onTitleChange,
 }: NotesListProps) {
   return (
-    <div className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col">
-      <div className="p-4 border-b border-gray-200">
+    <div className="w-64 h-screen flex flex-col">
+      <div className="p-4">
         <Button onClick={onNewNote}>+ new note</Button>
       </div>
 
