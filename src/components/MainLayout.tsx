@@ -3,6 +3,7 @@
 import { useState } from "react";
 import NotesList from "@/components/NotesList";
 import NotesContent from "./NotesContent";
+import SoundToggle from "./tokens/SoundToggle";
 
 interface Note {
   id: string;
@@ -16,6 +17,7 @@ interface Note {
 export default function MainLayout() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true); // Default to ON
 
   const handleNoteSelect = (noteId: string) => {
     setNotes(
@@ -30,7 +32,7 @@ export default function MainLayout() {
   const handleNewNote = () => {
     const newNote: Note = {
       id: Date.now().toString(),
-      title: "New Note", // default
+      title: "New Note",
       content: "",
       tags: [],
       isSelected: true,
@@ -41,7 +43,6 @@ export default function MainLayout() {
     setSelectedNoteId(newNote.id);
   };
 
-  //* handle title changes and change to title in db
   const handleTitleChange = (noteId: string, newTitle: string) => {
     setNotes(
       notes.map((note) =>
@@ -49,13 +50,13 @@ export default function MainLayout() {
       )
     );
   };
+
   const handleSelectedNoteTitleChange = (newTitle: string) => {
     if (selectedNoteId) {
       handleTitleChange(selectedNoteId, newTitle);
     }
   };
 
-  //* when user changes content, update the content in the db
   const handleContentChange = (content: string) => {
     if (!selectedNoteId) return;
     setNotes(
@@ -65,13 +66,19 @@ export default function MainLayout() {
     );
   };
 
-  //* get a variable to store the selected note from the db for rendering
+  const toggleSound = () => {
+    setSoundEnabled(!soundEnabled);
+  };
+
   const selectedNote = selectedNoteId
     ? notes.find((note) => note.id === selectedNoteId) || null
     : null;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 relative">
+      {/* Sound Toggle Component */}
+      <SoundToggle soundEnabled={soundEnabled} onToggle={toggleSound} />
+
       <NotesList
         notes={notes}
         onNoteSelect={handleNoteSelect}
@@ -82,6 +89,7 @@ export default function MainLayout() {
         selectedNote={selectedNote}
         onContentChange={handleContentChange}
         onTitleChange={handleSelectedNoteTitleChange}
+        soundEnabled={soundEnabled}
       />
     </div>
   );

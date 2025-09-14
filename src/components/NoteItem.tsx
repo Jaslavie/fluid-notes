@@ -30,16 +30,14 @@ export default function NoteItem({
 
   return (
     <div
-      className={`p-4 cursor-pointer border-b border-gray-100 hover:bg-gray-100 transition-colors ${
-        note.isSelected ? "bg-blue-50 border-l-4 border-l-blue-600" : ""
-      }`}
+      className={`py-2 px-4 cursor-pointer border-0 transition-colors`}
       onClick={handleClick}
     >
       <EditableTitle
         title={note.title}
         onTitleChange={handleTitleChange}
-        className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
-        tag="h3" // Use h3 for note items in the sidebar
+        className="font-medium text-gray-900 transition-colors"
+        tag="h4" 
       />
     </div>
   );

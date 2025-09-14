@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import NoteItem from './NoteItem';
+import NoteItem from "./NoteItem";
 
 interface Note {
   id: string;
@@ -15,10 +15,14 @@ interface NotesListProps {
   onTitleChange: (noteId: string, newTitle: string) => void;
 }
 
-export default function NotesList({ notes, onNoteSelect, onNewNote, onTitleChange }: NotesListProps) {
+export default function NotesList({
+  notes,
+  onNoteSelect,
+  onNewNote,
+  onTitleChange,
+}: NotesListProps) {
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col">
-      {/* New Note Button */}
       <div className="p-4 border-b border-gray-200">
         <button
           onClick={onNewNote}
@@ -27,13 +31,15 @@ export default function NotesList({ notes, onNoteSelect, onNewNote, onTitleChang
           + new note
         </button>
       </div>
-      
+
       {/* Notes List Container */}
       <div className="flex-1 overflow-y-auto">
         {notes.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
             <p className="text-sm">No notes yet</p>
-            <p className="text-xs mt-1">Click &quot;+ new note&quot; to get started</p>
+            <p className="text-xs mt-1">
+              Click &quot;+ new note&quot; to get started
+            </p>
           </div>
         ) : (
           notes.map((note) => (

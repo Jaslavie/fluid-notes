@@ -13,7 +13,7 @@ interface EditableTitleProps {
 export default function EditableTitle({
   title,
   onTitleChange,
-  className = "font-medium text-gray-900 hover:text-blue-600 transition-colors",
+  className = "font-medium text-gray-900  transition-colors",
   placeholder = "Enter title...",
   tag: Tag = "h1", // Default to h1, but can be overridden
 }: EditableTitleProps) {

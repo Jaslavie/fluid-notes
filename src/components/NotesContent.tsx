@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import EditableTitle from "./EditableTitle";
+import TypeArea from "./TypeArea";
 
 interface NoteContent {
   id: string;
@@ -15,12 +16,14 @@ interface NotesContentProps {
   selectedNote: NoteContent | null; // the note that is currently selected
   onContentChange: (content: string) => void; // callback when user changes content
   onTitleChange: (newTitle: string) => void;
+  soundEnabled: boolean;
 }
 
 export default function NotesContent({
   selectedNote,
   onContentChange,
   onTitleChange,
+  soundEnabled,
 }: NotesContentProps) {
   const [content, setContent] = useState(selectedNote?.content || "");
 
@@ -31,8 +34,7 @@ export default function NotesContent({
     }
   }, [selectedNote]);
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
+  const handleContentChange = (newContent: string) => {
     setContent(newContent);
     onContentChange(newContent);
   };
@@ -55,7 +57,7 @@ export default function NotesContent({
         <EditableTitle
           title={selectedNote.title}
           onTitleChange={onTitleChange}
-          className="text-2xl font-bold text-gray-900 mb-2 hover:text-blue-600 transition-colors cursor-pointer"
+          className="text-2xl font-bold text-gray-900 mb-2 transition-colors cursor-pointer"
         />
       </div>
 
@@ -65,18 +67,18 @@ export default function NotesContent({
           {/* Date Range */}
           {selectedNote.dateRange && (
             <div className="mb-4">
-              <span className="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
+              <span className="bg-gray-100 text-gray-600 px-3 py-1 text-sm">
                 {selectedNote.dateRange}
               </span>
             </div>
           )}
 
-          {/* Main Content */}
-          <textarea
+          {/* Typewriter Textarea */}
+          <TypeArea
             value={content}
             onChange={handleContentChange}
             placeholder="Start writing your notes here..."
-            className="w-full h-96 p-4 border border-gray-200 rounded-lg resize-none focus:outline-none focus:border-transparent text-gray-800"
+            soundEnabled={soundEnabled}
           />
         </div>
       </div>
