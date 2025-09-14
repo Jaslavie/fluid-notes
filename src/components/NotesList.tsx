@@ -1,6 +1,7 @@
 "use client";
 
 import NoteItem from "./NoteItem";
+import Button from "./Button";
 
 interface Note {
   id: string;
@@ -24,12 +25,7 @@ export default function NotesList({
   return (
     <div className="w-64 bg-gray-50 border-r border-gray-200 h-screen flex flex-col">
       <div className="p-4 border-b border-gray-200">
-        <button
-          onClick={onNewNote}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-        >
-          + new note
-        </button>
+        <Button onClick={onNewNote}>+ new note</Button>
       </div>
 
       {/* Notes List Container */}
