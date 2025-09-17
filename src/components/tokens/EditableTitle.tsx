@@ -15,7 +15,7 @@ export default function EditableTitle({
   onTitleChange,
   className = "font-medium text-gray-700 transition-colors",
   placeholder = "Enter title...",
-  tag: Tag = "h1",
+  tag: Tag = "h2",
 }: EditableTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(title);
@@ -95,10 +95,9 @@ export default function EditableTitle({
           onChange={handleInputChange}
           onBlur={handleTitleSubmit}
           onKeyDown={handleKeyDown}
-          className="bg-transparent border-none outline-none font-medium text-gray-700"
+          className={`bg-transparent border-none outline-none ${className}`}
           style={{
             width: `${inputWidth}px`,
-            fontSize: "inherit",
             fontFamily: "inherit",
             fontWeight: "inherit",
           }}
