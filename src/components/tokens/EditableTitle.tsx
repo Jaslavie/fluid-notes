@@ -95,11 +95,10 @@ export default function EditableTitle({
           onChange={handleInputChange}
           onBlur={handleTitleSubmit}
           onKeyDown={handleKeyDown}
-          className={`bg-transparent border-none outline-none ${className}`}
+          className={`bg-transparent border-none outline-none ${className} font-medium text-gray-400`}
           style={{
             width: `${inputWidth}px`,
             fontFamily: "inherit",
-            fontWeight: "inherit",
           }}
           autoFocus
           placeholder={placeholder}
