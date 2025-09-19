@@ -20,7 +20,7 @@ export default function EditableTitle({
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(title);
   const [inputWidth, setInputWidth] = useState(0);
-  const titleRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<React.ElementRef<typeof Tag>>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Measure the title width when component mounts or title changes
