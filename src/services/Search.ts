@@ -1,21 +1,23 @@
 // sparse embedding transformer model for extracting meanings from search
-import { SentenceTransformer } from '@xenova/transformers';
+import { pipeline } from '@xenova/transformers';
 
 
 //*-----output-----*//
 // testing with location
 export interface LocationResult {
+    // initial request result
     place_id: string;
     name: string;
+    description: string;
     formatted_address: string;
     geometry: { 
         location: { lat: number; lng: number};
     };
     rating?: number;
     types: string[]; // cafe, restaurant, etc
+
     // measure the similarity between the query and result
     similarity_score?: number;
-    semantic_relevance?: number;
 }
 
 //*-----input-----*//
@@ -23,14 +25,14 @@ export interface LocationResult {
 export interface SearchSession {
     timestamp: Date; // use the date as the primary key
     query: string;
-    embeddings: Embedding[];
+    embeddings: SparseEmbedding[];
     clusters: string[]; // list of semantics themes
     results: LocationResult[]; // return the n amount of best locations
 }
 
 //*-----analysis-----*//
 // sparse embedding
-export interface Embedding {
+export interface SparseEmbedding {
     indices: number[]; // location of zeros
     values: number[]; // location of non-zero values
     dimension: number; // original vector length
@@ -44,22 +46,31 @@ interface QueryAnalysis {
     confidence: number;        // Analysis confidence score
 }
 
-//*------ main service-----*//
 
+
+//*------ main class-----*//
 class SearchService {
+    //* ---- main variables *-----//
     private static instance: SearchService;
-    private model: Pipeline | null = null;
+    private model: pipeline | null = null;
     private googleApiKey: string;
     // create a temp cache for recent search results
     private searchCache: Map<string, { results: LocationResult[]; timestamp: number }> = new Map();
     private searchSessions: SearchSession[] = [];
     private isModelLoading: boolean = false;
     private modelLoadPromise: Promise<void> | null = null; 
-
     // embedding optimization
     private readonly SPARSITY_THRESHOLD = 0.01; // remove dimensions that do not express the feature at all
     private readonly MAX_DIMENSIONS = 100; // keep only top 100 dimensions
+    // keywords for filtering search results
+    private readonly keywords = [
+        'cozy', 'intimate', 'spacious', 'outdoor', 'patio', 'rooftop', 'dim lighting',
+        'live music', 'DJ', 'quiet', 'background music',
+        'romantic', 'family-friendly', 'trendy', 'chill', 'lively', 'crowded', 'busy', 'locals', 'tourists'
+    ];
 
+
+    //* ---- main functions *----//
     private constructor() {
         this.googleApiKey = process.env.GOOGLE_API_KEY!;
     }
@@ -95,7 +106,7 @@ class SearchService {
     private async loadModel(): Promise<void> {
         try {
             this.model = await pipeline('feature-extraction', 'sentence-transformers/all-MiniLM-L6-v2', {
-                quantized: true; // quantize (reduce size) to save memory
+                quantized: true // quantize (reduce size) to save memory
             })
             this.isModelLoading = false;
         } catch(error) {
@@ -104,6 +115,7 @@ class SearchService {
         }
     }
 
+    //* ----- WORKFLOW STEPS ------ *//
     // convert dense to sparse embedding
     // compresses 384D vector
     private createSparseEmbedding(denseEmbedding: number[]): SparseEmbedding {
@@ -131,11 +143,13 @@ class SearchService {
         return { indices, values, dimension: denseEmbedding.length, magnitude };
     }
 
-    // calculate cosine similarity between 2 sparse embeddings for scoring search results with the query
+    // calculate cosine similarity between 2 sparse embeddings for matching search results with the query
     private calculateSparseSimilarity(embedding1: SparseEmbedding, embedding2: SparseEmbedding): number {
         // calculate dot product between each index within embedding
         let dotProduct = 0;
         let i = 0, j = 0;
+
+        // calculate dot produt
         while (i < embedding1.indices.length && j < embedding2.indices.length) {
             // if same index, add product of values
             if (embedding1.indices[i] === embedding2.indices[j]) {
@@ -148,14 +162,122 @@ class SearchService {
             } else {
                 ++j;
             }
-
-            // calculate cosine similarity
-            const similarity = dotProduct / (embedding1.magnitude * embedding2.magnitude);
-            return Math.max(0, Math.min(1, similarity)); // Clamp to [0, 1]
         }
         
+        // calculate cosine similarity
+        const similarity = dotProduct / (embedding1.magnitude * embedding2.magnitude);
+        return Math.max(0, Math.min(1, similarity)); // Clamp to [0, 1]
     }
 
-    // analyze query to extract user intent
+    // turn query and results into embeddings with the sparse encoder
+    private async embedQuery(query: string): Promise<SparseEmbedding> {
+        if (!this.model) await this.initializeModel();
+
+        // create a embedding pool of the entire query
+        const output = await this.model!(query, {pooling: 'mean', normalize: true});
+        return this.createSparseEmbedding(output.data);
+    }
+    private async embedLocations(locations: LocationResult[]): Promise<SparseEmbedding[]> {
+        return Promise.all(
+            locations.map(async (loc) => {
+                let text = ' '; // combine all fields in a link into a single text query
+                if (loc.name) text += `${loc.name}`;
+                if (loc.description) text += ` ${loc.description}`;
+                if (loc.types && loc.types.length > 0) text += ` ${loc.types.join(', ')}`;
+
+                text = text.trim();
+                return this.embedQuery(text);
+            })
+        );
+    }
+
+    private getReviews(reviews: string[]): string[] {
+        const relevant = reviews.filter(review => 
+            this.keywords.some(keyword => review.toLowerCase().includes(keyword))
+        );
+        // return the most recent review if there are no reviews that match the keyword
+        if (relevant.length === 0 && reviews.length  > 0) return [reviews[0]];
+
+        return relevant.slice(0, 3); 
+    }
+
+    // search places on google and get raw location data
+    private async searchPlaces(query: string): Promise<LocationResult[]> {
+        // fetch response to user query from google search api
+        const response = await fetch(
+            `/api/places/search?query=${encodeURIComponent(query)}`
+        );
+
+        if (!response.ok) throw new Error(`Places API failed: ${response.status}`);
+
+        const data = await response.json();
+        return (data.results || []).slice(0, 10); // get top 10 results
+    }
+
+    // ranking pipeline for results
+    private async rankBySimilarity(
+        queryEmbedding: SparseEmbedding,
+        locations: LocationResult[]
+    ): Promise<LocationResult[]> {
+        if (locations.length === 0) return [];
+        // create embeddings for all search results
+        const locationEmbeddings = await this.embedLocations(locations);
+        
+        // calculate similarities and embed scores
+        // map/attach to the location data struc at the index
+        const scoredLocations = locations.map((location, index) => ({
+            ...location,
+            similarity_score: this.calculateSparseSimilarity(queryEmbedding, locationEmbeddings[index])
+        }));
+
+        // get the most similar elements
+        const filtered = scoredLocations
+            .sort((a,b) => b.similarity_score! - a.similarity_score!);
+        
+        return filtered.slice(0, 5);
+    }
+
+    //*--- main pipeline ----*//
+    async searchLocations(userQuery: string): Promise<LocationResult{
+        results: LocationResult[];
+        queryEmbedding: this.SparseEmbedding;
+    }> {
+        if (!userQuery.trim()) {
+            return { results: [], queryEmbedding: { indices: [], values: [], norm: 0 } };
+          }
+
+        const cacheKey = userQuery.toLowerCase().trim(); // use user query as the key to access cache
+        // return cache if exists
+        const cached = resultCache.get(cacheKey);
+        if (cached) 
+            return { results: cached.results, queryEmbedding: cached.embedding };
+
+        try{
+            // create embedding
+            const queryEmbedding = await this.embedQuery(userQuery);
+            
+            // search google places
+            const rawResults = await this.searchPlaces(userQuery);
+
+            // ranking
+            const rankedResults = await this.rankBySimilarity(queryEmbedding, rawResults);
+
+            // Cache results with embedding
+      this.resultCache.set(cacheKey, {
+        results: rankedResults,
+        timestamp: Date.now(),
+        embedding: queryEmbedding
+      });
+
+      // Cleanup cache
+      if (this.resultCache.size > 50) {
+        const oldestKey = this.resultCache.keys().next().value;
+        this.resultCache.delete(oldestKey);
+      }
+        }
+
+    }
     
 }
+
+export default SearchService;
