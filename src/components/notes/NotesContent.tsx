@@ -75,6 +75,7 @@ export default function NotesContent({
               onChange={handleContentChange}
               placeholder="Start writing your notes here..."
               soundEnabled={soundEnabled}
+              notesContent={content}
             />
           </div>
         </div>

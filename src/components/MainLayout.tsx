@@ -15,8 +15,18 @@ interface Note {
 }
 
 export default function MainLayout() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [notes, setNotes] = useState<Note[]>([
+    {
+      id: "default",
+      title: "Travel Notes",
+      content: "• trip: nyc jun 25 - 27",
+      tags: ["travel"],
+      isSelected: true,
+    },
+  ]);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(
+    "default"
+  );
   const [soundEnabled, setSoundEnabled] = useState(true);
 
   const handleNoteSelect = (noteId: string) => {
